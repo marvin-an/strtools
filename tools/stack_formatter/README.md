@@ -1,22 +1,8 @@
-# 🎈strtools
+# 🔧 堆栈字符串格式化工具 | Stack String Formatter
 
-Strtools is a text processing tool designed specifically for programmers, offering efficient and practical string manipulation features.
+一个简单易用的Streamlit应用，用于格式化以竖线符号（|）分隔的堆栈字符串。
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://strtools.streamlit.app/)
-
-### How to run it on your own machine
-
-1. Install the requirements
-
-   ```
-   $ pip install -r requirements.txt
-   ```
-
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+A simple and user-friendly Streamlit application for formatting stack strings separated by pipe symbols (|).
 
 ## 功能特点 | Features
 
@@ -28,16 +14,11 @@ Strtools is a text processing tool designed specifically for programmers, offeri
 
 ## 使用方法 | How to Use
 
-### 安装依赖 | Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
 ### 运行应用 | Run the Application
 
 ```bash
-streamlit run streamlit_app.py
+# 在项目根目录运行
+streamlit run tools/stack_formatter/app.py
 ```
 
 ### 使用说明 | Usage Instructions
@@ -68,17 +49,9 @@ at com.example.Utils.process(Utils.java:15)
 at com.example.Handler.handle(Handler.java:42)
 ```
 
-## 技术栈 | Tech Stack
+## 适用场景 | Use Cases
 
-- **Streamlit** - Web应用框架 | Web application framework
-- **Python** - 编程语言 | Programming language
-
-## 许可证 | License
-
-MIT License
-
-## 贡献 | Contributing
-
-欢迎提交Issue和Pull Request！
-
-Welcome to submit Issues and Pull Requests!
+- **Java堆栈跟踪** | Java stack traces
+- **Python异常信息** | Python exception info  
+- **JavaScript错误堆栈** | JavaScript error stacks
+- **其他编程语言的调试信息** | Debug info from other programming languages 
