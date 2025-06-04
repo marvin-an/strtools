@@ -1,15 +1,53 @@
 import streamlit as st
+import io
+import zipfile
+from datetime import datetime
+import base64
 
-# 兼容性处理 - 检查Streamlit版本
-def rerun_app():
-    """兼容不同版本的Streamlit重新运行方法"""
-    if hasattr(st, 'rerun'):
-        st.rerun()
-    elif hasattr(st, 'experimental_rerun'):
-        st.experimental_rerun()
-    else:
-        # 如果都没有，使用query_params来强制刷新
-        st.query_params.clear()
+# 创建复制按钮的JavaScript代码
+def create_copy_button(text_content, button_id):
+    """创建一键复制按钮"""
+    # 将文本内容编码为base64以避免JavaScript中的特殊字符问题
+    encoded_text = base64.b64encode(text_content.encode('utf-8')).decode('utf-8')
+    
+    copy_script = f"""
+    <script>
+    function copyToClipboard_{button_id}() {{
+        const text = atob('{encoded_text}');
+        navigator.clipboard.writeText(text).then(function() {{
+            const button = document.getElementById('copy_btn_{button_id}');
+            const originalText = button.innerHTML;
+            button.innerHTML = '✅ 已复制!';
+            button.style.backgroundColor = '#4CAF50';
+            setTimeout(function() {{
+                button.innerHTML = originalText;
+                button.style.backgroundColor = '#1f77b4';
+            }}, 2000);
+        }}).catch(function(err) {{
+            console.error('复制失败: ', err);
+            const button = document.getElementById('copy_btn_{button_id}');
+            button.innerHTML = '❌ 复制失败';
+            setTimeout(function() {{
+                button.innerHTML = '📋 复制文本';
+                button.style.backgroundColor = '#1f77b4';
+            }}, 2000);
+        }});
+    }}
+    </script>
+    <button id="copy_btn_{button_id}" 
+            onclick="copyToClipboard_{button_id}()" 
+            style="background-color: #1f77b4; 
+                   color: white; 
+                   border: none; 
+                   padding: 8px 12px; 
+                   border-radius: 4px; 
+                   cursor: pointer;
+                   font-size: 14px;
+                   width: 100%;">
+        📋 复制文本
+    </button>
+    """
+    return copy_script
 
 # 语言配置
 LANGUAGES = {
@@ -22,6 +60,7 @@ LANGUAGES = {
         "tools": {
             "home": "🏠 首页",
             "stack_formatter": "🔧 堆栈字符串格式化",
+            "text_splitter": "📄 多行文本分割",
         },
         "stack_formatter": {
             "title": "🔧 堆栈字符串格式化工具",
@@ -46,6 +85,34 @@ LANGUAGES = {
                 "格式化后的结果会在下方显示"
             ]
         },
+        "text_splitter": {
+            "title": "📄 多行文本分割工具",
+            "description": "将大段文本按指定分隔符和行数分割成多个批次，支持复制和下载",
+            "input_label": "请输入要分割的文本:",
+            "input_placeholder": "粘贴您的多行文本...",
+            "separator_label": "分隔符:",
+            "separator_help": "用于分割文本的字符，默认为换行符",
+            "lines_per_batch_label": "每批行数:",
+            "lines_per_batch_help": "每个批次包含的行数",
+            "split_button": "开始分割",
+            "result_title": "📊 分割结果",
+            "total_lines": "总行数",
+            "total_batches": "分割批次",
+            "download_prefix": "批次",
+            "download_all_zip": "下载所有批次 (ZIP)",
+            "batch_content": "批次内容 (点击右上角复制按钮)",
+            "copy_tip": "💡 点击代码块右上角的复制按钮可一键复制文本",
+            "example_title": "💡 使用示例",
+            "how_to_use": "使用方法：",
+            "usage_steps": [
+                "在文本框中粘贴需要分割的多行文本",
+                "选择分隔符（默认为换行符\\n）",
+                "设置每批包含的行数",
+                "点击开始分割按钮",
+                "点击代码块右上角复制按钮或下载文件"
+            ],
+            "no_content_warning": "⚠️ 请输入要分割的文本内容"
+        },
         "home": {
             "welcome": "欢迎使用StrTools！",
             "description": "这是一个专为程序员设计的字符串处理工具集合。请选择您需要的工具。",
@@ -59,9 +126,11 @@ LANGUAGES = {
             ],
             "available_tools": "可用工具：",
             "stack_formatter_desc": "格式化以竖线符号分隔的堆栈字符串，适用于Java、Python、JavaScript等语言的堆栈跟踪信息",
+            "text_splitter_desc": "将大段文本按指定规则分割成多个批次文件，支持自定义分隔符和批次大小",
             "more_tools": "更多工具即将到来...",
             "tool_buttons": {
                 "stack_formatter": "使用堆栈格式化工具",
+                "text_splitter": "使用文本分割工具",
                 "coming_soon": "敬请期待"
             }
         }
@@ -75,6 +144,7 @@ LANGUAGES = {
         "tools": {
             "home": "🏠 Home",
             "stack_formatter": "🔧 Stack String Formatter",
+            "text_splitter": "📄 Multi-line Text Splitter",
         },
         "stack_formatter": {
             "title": "🔧 Stack String Formatter",
@@ -99,6 +169,34 @@ LANGUAGES = {
                 "The formatted result will be displayed below"
             ]
         },
+        "text_splitter": {
+            "title": "📄 Multi-line Text Splitter",
+            "description": "Split large text into multiple batches by specified separator and line count, with copy and download support",
+            "input_label": "Enter text to split:",
+            "input_placeholder": "Paste your multi-line text here...",
+            "separator_label": "Separator:",
+            "separator_help": "Character used to split text, default is newline",
+            "lines_per_batch_label": "Lines per batch:",
+            "lines_per_batch_help": "Number of lines in each batch",
+            "split_button": "Start Splitting",
+            "result_title": "📊 Split Results",
+            "total_lines": "Total lines",
+            "total_batches": "Total batches",
+            "download_prefix": "Batch",
+            "download_all_zip": "Download All Batches (ZIP)",
+            "batch_content": "Batch Content (click copy button at top-right)",
+            "copy_tip": "💡 Click the copy button at the top-right of code block to copy text",
+            "example_title": "💡 Usage Example",
+            "how_to_use": "How to use:",
+            "usage_steps": [
+                "Paste multi-line text in the text box",
+                "Choose separator (default is newline \\n)",
+                "Set number of lines per batch",
+                "Click the split button",
+                "Click copy button at top-right of code block or download files"
+            ],
+            "no_content_warning": "⚠️ Please enter text content to split"
+        },
         "home": {
             "welcome": "Welcome to StrTools!",
             "description": "This is a collection of string processing tools designed specifically for developers. Please select the tool you need.",
@@ -112,14 +210,29 @@ LANGUAGES = {
             ],
             "available_tools": "Available Tools:",
             "stack_formatter_desc": "Format pipe-separated stack strings, suitable for Java, Python, JavaScript and other programming languages",
+            "text_splitter_desc": "Split large text into multiple batch files with custom separator and batch size support",
             "more_tools": "More tools coming soon...",
             "tool_buttons": {
                 "stack_formatter": "Use Stack Formatter",
+                "text_splitter": "Use Text Splitter",
                 "coming_soon": "Coming Soon"
             }
         }
     }
 }
+
+# 创建ZIP文件的函数
+def create_zip_file(batches_data, lang):
+    """创建包含所有批次文件的ZIP"""
+    zip_buffer = io.BytesIO()
+    
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for i, (batch_content, start_idx, end_idx) in enumerate(batches_data):
+            filename = f"batch_{i+1}.txt"
+            zip_file.writestr(filename, batch_content)
+    
+    zip_buffer.seek(0)
+    return zip_buffer.getvalue()
 
 # 页面配置
 st.set_page_config(
@@ -171,6 +284,11 @@ with st.sidebar:
                 type="primary" if st.session_state.selected_tool == "stack_formatter" else "secondary"):
         st.session_state.selected_tool = "stack_formatter"
     
+    # 文本分割工具按钮
+    if st.button(lang["tools"]["text_splitter"], use_container_width=True,
+                type="primary" if st.session_state.selected_tool == "text_splitter" else "secondary"):
+        st.session_state.selected_tool = "text_splitter"
+    
     # 预留更多工具按钮
     st.markdown("#### 🚧 " + ("即将推出" if st.session_state.language == "中文" else "Coming Soon"))
     st.button("🔄 JSON Formatter", use_container_width=True, disabled=True)
@@ -210,6 +328,18 @@ if st.session_state.selected_tool == "home":
             if st.button(lang['home']['tool_buttons']['stack_formatter'], 
                         key="home_to_stack", use_container_width=True):
                 st.session_state.selected_tool = "stack_formatter"
+        
+        with st.container():
+            st.markdown(f"""
+            <div style="padding: 1rem; border: 1px solid #ddd; border-radius: 0.5rem; margin-bottom: 1rem;">
+                <h4>📄 {lang['tools']['text_splitter'].replace('📄 ', '')}</h4>
+                <p>{lang['home']['text_splitter_desc']}</p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            if st.button(lang['home']['tool_buttons']['text_splitter'], 
+                        key="home_to_splitter", use_container_width=True):
+                st.session_state.selected_tool = "text_splitter"
     
     with col2:
         with st.container():
@@ -279,6 +409,173 @@ elif st.session_state.selected_tool == "stack_formatter":
         at com.example.Service.execute(Service.java:8)
         ```
         """)
+
+elif st.session_state.selected_tool == "text_splitter":
+    # 多行文本分割工具
+    st.markdown(f"## {lang['text_splitter']['title']}")
+    st.write(lang['text_splitter']['description'])
+    
+    # 使用说明
+    with st.expander(lang['text_splitter']['how_to_use']):
+        for i, step in enumerate(lang['text_splitter']['usage_steps'], 1):
+            st.write(f"{i}. {step}")
+    
+    # 配置区域
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        # 分隔符输入
+        separator = st.text_input(
+            lang['text_splitter']['separator_label'],
+            value="\\n",
+            help=lang['text_splitter']['separator_help']
+        )
+        # 将\\n转换为实际的换行符
+        if separator == "\\n":
+            separator = "\n"
+    
+    with col2:
+        # 每批行数
+        lines_per_batch = st.number_input(
+            lang['text_splitter']['lines_per_batch_label'],
+            min_value=1,
+            max_value=10000,
+            value=100,
+            help=lang['text_splitter']['lines_per_batch_help']
+        )
+    
+    # 文本输入区域
+    input_text = st.text_area(
+        lang['text_splitter']['input_label'],
+        height=200,
+        placeholder=lang['text_splitter']['input_placeholder']
+    )
+    
+    # 分割处理
+    if input_text:
+        if st.button(lang['text_splitter']['split_button'], type="primary"):
+            # 分割文本
+            lines = input_text.split(separator)
+            lines = [line for line in lines if line.strip()]  # 去除空行
+            
+            if lines:
+                # 计算批次
+                total_lines = len(lines)
+                total_batches = (total_lines + lines_per_batch - 1) // lines_per_batch
+                
+                st.subheader(lang['text_splitter']['result_title'])
+                
+                # 显示统计信息
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric(lang['text_splitter']['total_lines'], total_lines)
+                with col2:
+                    st.metric(lang['text_splitter']['total_batches'], total_batches)
+                
+                # 复制提示
+                st.info(lang['text_splitter']['copy_tip'])
+                
+                # 生成批次数据
+                batches_data = []
+                for i in range(total_batches):
+                    start_idx = i * lines_per_batch
+                    end_idx = min(start_idx + lines_per_batch, total_lines)
+                    batch_lines = lines[start_idx:end_idx]
+                    batch_content = separator.join(batch_lines) if separator != "\n" else "\n".join(batch_lines)
+                    batches_data.append((batch_content, start_idx, end_idx))
+                
+                # 下载所有批次的ZIP包
+                st.markdown("---")
+                if total_batches > 1:
+                    zip_data = create_zip_file(batches_data, lang)
+                    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                    st.download_button(
+                        label=f"📦 {lang['text_splitter']['download_all_zip']}",
+                        data=zip_data,
+                        file_name=f"text_batches_{timestamp}.zip",
+                        mime="application/zip",
+                        use_container_width=True
+                    )
+                    st.markdown("---")
+                
+                # 为每个批次创建展示和下载
+                for i, (batch_content, start_idx, end_idx) in enumerate(batches_data):
+                    with st.expander(f"{lang['text_splitter']['download_prefix']} {i+1} ({'行' if st.session_state.language == '中文' else 'Lines'} {start_idx+1}-{end_idx})", expanded=True if total_batches <= 3 else False):
+                        
+                        # 使用st.code显示内容，自带复制按钮
+                        st.markdown(f"**{lang['text_splitter']['batch_content']}:**")
+                        st.code(batch_content, language=None)
+                        
+                        # 按钮区域
+                        col1, col2 = st.columns([1, 1])
+                        
+                        with col1:
+                            # 下载按钮
+                            st.download_button(
+                                label=f"📥 {'下载' if st.session_state.language == '中文' else 'Download'} {lang['text_splitter']['download_prefix']} {i+1}",
+                                data=batch_content,
+                                file_name=f"batch_{i+1}.txt",
+                                mime="text/plain",
+                                key=f"download_{i}",
+                                use_container_width=True
+                            )
+                        
+                        with col2:
+                            # 统计信息
+                            lines_count = len(batch_content.split(separator if separator != "\n" else "\n"))
+                            chars_count = len(batch_content)
+                            st.info(f"📊 {lines_count}{'行' if st.session_state.language == '中文' else 'lines'} / {chars_count}{'字符' if st.session_state.language == '中文' else 'chars'}")
+            else:
+                st.warning(lang['text_splitter']['no_content_warning'])
+    
+    # 示例
+    with st.expander(lang['text_splitter']['example_title']):
+        if st.session_state.language == "中文":
+            st.markdown("""
+            **使用场景示例：**
+            
+            1. **分割日志文件：** 将大型日志文件分割成小批次便于处理
+            2. **数据批处理：** 将大量数据分割成批次进行处理
+            3. **文本分析：** 将长文本分割成段落进行分析
+            4. **邮件列表：** 将大量邮件地址分割成批次发送
+            
+            **输入示例：**
+            ```
+            用户1@example.com
+            用户2@example.com
+            用户3@example.com
+            ...
+            ```
+            
+            **设置：** 分隔符=\\n，每批=50行
+            **结果：** 
+            - ✅ 使用代码块自带的复制按钮一键复制
+            - ✅ 下载ZIP包包含所有分开的批次文件
+            - ✅ 实时显示每个批次的行数和字符数统计
+            """)
+        else:
+            st.markdown("""
+            **Usage Examples:**
+            
+            1. **Split log files:** Divide large log files into small batches for processing
+            2. **Data batch processing:** Split large datasets into batches for processing
+            3. **Text analysis:** Divide long text into paragraphs for analysis
+            4. **Email lists:** Split large email lists into batches for sending
+            
+            **Input Example:**
+            ```
+            user1@example.com
+            user2@example.com
+            user3@example.com
+            ...
+            ```
+            
+            **Settings:** Separator=\\n, Lines per batch=50
+            **Result:** 
+            - ✅ Use built-in copy button of code block for one-click copying
+            - ✅ Download ZIP package with all separate batch files
+            - ✅ Real-time statistics for lines and characters in each batch
+            """)
 
 # 页脚
 st.markdown("---")
