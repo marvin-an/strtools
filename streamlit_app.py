@@ -54,61 +54,22 @@ def create_copy_button(text_content, button_id):
 # 乱码检测函数
 def is_garbled_text(text, threshold=0.3):
     """
-    检测文本是否为乱码
+    检测文本是否为非ASCII字符（简化的乱码检测）
     Args:
         text: 要检测的文本
-        threshold: 乱码字符比例阈值，超过此比例认为是乱码
+        threshold: 未使用，保持兼容性
     Returns:
-        bool: True表示是乱码，False表示正常文本
+        bool: True表示包含非ASCII字符，False表示纯ASCII文本
     """
     if not text.strip():
         return True  # 空行认为需要过滤
     
-    # 移除空白字符
-    text = text.strip()
-    if len(text) == 0:
-        return True
-    
-    garbled_count = 0
-    total_chars = len(text)
-    
-    for char in text:
-        # 检查是否为控制字符（除了常见的制表符、换行符）
-        if unicodedata.category(char).startswith('C') and char not in '\t\n\r':
-            garbled_count += 1
-            continue
-            
-        # 检查是否为未定义的Unicode字符
-        if unicodedata.category(char) == 'Cn':
-            garbled_count += 1
-            continue
-            
-        # 检查是否为替换字符（）
-        if char == '\ufffd':
-            garbled_count += 1
-            continue
-            
-        # 检查是否为异常的符号密集
-        if unicodedata.category(char).startswith('S'):
-            # 如果符号字符过多，可能是乱码
-            pass
-    
-    # 检查乱码模式
-    # 1. 连续的问号或替换字符
-    if re.search(r'\?{3,}|�{2,}', text):
-        return True
-        
-    # 2. 大量连续的特殊字符
-    if re.search(r'[^\w\s\u4e00-\u9fff]{5,}', text):
-        garbled_count += 3
-        
-    # 3. 检查是否包含明显的编码错误模式
-    if re.search(r'\\x[0-9a-fA-F]{2}', text):  # 十六进制转义序列
-        return True
-        
-    # 计算乱码比例
-    garbled_ratio = garbled_count / total_chars
-    return garbled_ratio > threshold
+    # 检查是否包含非ASCII字符
+    try:
+        text.encode('ascii')
+        return False  # 纯ASCII文本，不过滤
+    except UnicodeEncodeError:
+        return True   # 包含非ASCII字符，过滤
 
 # 语言配置
 LANGUAGES = {
@@ -155,8 +116,8 @@ LANGUAGES = {
             "separator_help": "用于分割文本的字符，默认为换行符",
             "lines_per_batch_label": "每批行数:",
             "lines_per_batch_help": "每个批次包含的行数",
-            "filter_garbled_label": "🧹 过滤乱码行",
-            "filter_garbled_help": "自动检测并过滤掉乱码、控制字符和异常内容的行",
+            "filter_garbled_label": "🧹 过滤非ASCII行",
+            "filter_garbled_help": "过滤掉包含非ASCII字符的行，只保留纯ASCII字符的行",
             "split_button": "开始分割",
             "result_title": "📊 分割结果",
             "total_lines": "总行数",
@@ -178,7 +139,7 @@ LANGUAGES = {
                 "在文本框中粘贴需要分割的多行文本",
                 "选择分隔符（默认为换行符\\n）",
                 "设置每批包含的行数",
-                "选择是否过滤乱码行",
+                "选择是否过滤非ASCII行",
                 "点击开始分割按钮",
                 "检查被过滤的内容是否正确",
                 "点击代码块右上角复制按钮或下载文件"
@@ -250,8 +211,8 @@ LANGUAGES = {
             "separator_help": "Character used to split text, default is newline",
             "lines_per_batch_label": "Lines per batch:",
             "lines_per_batch_help": "Number of lines in each batch",
-            "filter_garbled_label": "🧹 Filter Garbled Lines",
-            "filter_garbled_help": "Automatically detect and filter out garbled, control characters and abnormal content lines",
+            "filter_garbled_label": "🧹 Filter Non-ASCII Lines",
+            "filter_garbled_help": "Filter out lines containing non-ASCII characters, keeping only pure ASCII lines",
             "split_button": "Start Splitting",
             "result_title": "📊 Split Results",
             "total_lines": "Total lines",
@@ -273,7 +234,7 @@ LANGUAGES = {
                 "Paste multi-line text in the text box",
                 "Choose separator (default is newline \\n)",
                 "Set number of lines per batch",
-                "Choose whether to filter garbled lines",
+                "Choose whether to filter non-ASCII lines",
                 "Click the split button",
                 "Check if filtered content is correct",
                 "Click copy button at top-right of code block or download files"
