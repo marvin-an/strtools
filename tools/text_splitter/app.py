@@ -37,7 +37,7 @@ def is_garbled_text(text, threshold=0.3):
             garbled_count += 1
             continue
             
-        # 检查是否为替换字符（）
+        # 检查是否为替换字符（�）
         if char == '\ufffd':
             garbled_count += 1
             continue
@@ -49,7 +49,7 @@ def is_garbled_text(text, threshold=0.3):
     
     # 检查乱码模式
     # 1. 连续的问号或替换字符
-    if re.search(r'\?{3,}|{2,}', text):
+    if re.search(r'\?{3,}|�{2,}', text):
         return True
         
     # 2. 大量连续的特殊字符
@@ -381,7 +381,7 @@ with st.expander(lang['example_title']):
         4. **邮件列表：** 将大量邮件地址分割成批次发送
         
         **新功能 - 乱码过滤：**
-        - 🧹 **自动检测**：识别包含控制字符、替换字符（）的行
+        - 🧹 **自动检测**：识别包含控制字符、替换字符（�）的行
         - 🔍 **模式识别**：检测连续问号、十六进制转义序列等乱码模式
         - 📊 **统计显示**：显示过滤前后的行数对比
         - ⚡ **智能过滤**：保留正常内容，去除明显的乱码和异常字符
@@ -415,7 +415,7 @@ with st.expander(lang['example_title']):
         4. **Email lists:** Split large email lists into batches for sending
         
         **New Feature - Garbled Text Filtering:**
-        - 🧹 **Auto Detection**: Identify lines with control characters, replacement characters ()
+        - 🧹 **Auto Detection**: Identify lines with control characters, replacement characters (�)
         - 🔍 **Pattern Recognition**: Detect consecutive question marks, hex escape sequences and other garbled patterns
         - 📊 **Statistics Display**: Show line count comparison before and after filtering
         - ⚡ **Smart Filtering**: Keep normal content, remove obvious garbled and abnormal characters

@@ -95,7 +95,7 @@ def is_garbled_text(text, threshold=0.3):
     
     # 检查乱码模式
     # 1. 连续的问号或替换字符
-    if re.search(r'\?{3,}|{2,}', text):
+    if re.search(r'\?{3,}|�{2,}', text):
         return True
         
     # 2. 大量连续的特殊字符
